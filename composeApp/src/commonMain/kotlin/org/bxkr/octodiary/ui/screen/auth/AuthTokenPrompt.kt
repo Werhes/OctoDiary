@@ -30,21 +30,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import org.bxkr.octodiary.asClipEntry
 import org.bxkr.octodiary.domain.model.auth.TokenInfo
 import org.bxkr.octodiary.domain.model.user.UserType
-import org.bxkr.octodiary.getText
+import org.bxkr.octodiary.getClipboardText
 import org.bxkr.octodiary.presentation.viewmodel.AuthViewModel
+import org.bxkr.octodiary.setClipboardText
 import org.bxkr.octodiary.presentation.viewmodel.MainViewModel
 import org.bxkr.octodiary.ui.toHumanTime
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,8 +55,6 @@ fun AuthTokenPrompt(
     val uiState by viewModel.uiState.collectAsState()
     val tokenInfoFlow = uiState.tokenInfoFlow
     var tokenValue by remember { mutableStateOf("") }
-    val clipboard = LocalClipboard.current
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(tokenValue) {
         if (tokenValue.length > 2 && tokenValue.isNotBlank()) {
@@ -78,9 +73,7 @@ fun AuthTokenPrompt(
             Modifier.fillMaxWidth().padding(horizontal = 64.dp, vertical = 16.dp),
             label = { Text("Введите токен") },
             trailingIcon = { IconButton({
-                coroutineScope.launch {
-                    clipboard.getClipEntry()?.getText()?.let { tokenValue = it }
-                }
+                getClipboardText()?.let { tokenValue = it }
             }) {
                 Icon(
                     Icons.Rounded.ContentPaste,
@@ -164,13 +157,11 @@ private fun ExtendedTokenInfo(extended: TokenInfo.Extended) = Column {
 
 @Composable
 private fun TokenInfoRow(name: String, value: String) {
-    val coroutineScope = rememberCoroutineScope()
-    val localClipboard = LocalClipboard.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 32.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(name)
         Spacer(Modifier.width(16.dp))
         Text(value, Modifier.clickable {
-            coroutineScope.launch { localClipboard.setClipEntry(value.asClipEntry()) }
+            setClipboardText(value)
         }, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
