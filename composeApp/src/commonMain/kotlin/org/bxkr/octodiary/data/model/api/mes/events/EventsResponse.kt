@@ -20,7 +20,7 @@ data class EventItem(
     @SerialName("is_all_day") val isAllDay: Boolean? = null,
     @SerialName("description") val description: String? = null,
     @SerialName("homework") val homework: EventHomework? = null,
-    @SerialName("marks") val marks: List<EventMark> = emptyList()
+    @SerialName("marks") val marks: List<EventMark>? = emptyList()
 )
 
 @Serializable

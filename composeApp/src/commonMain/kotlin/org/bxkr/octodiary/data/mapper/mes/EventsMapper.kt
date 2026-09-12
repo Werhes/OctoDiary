@@ -29,7 +29,7 @@ private fun EventItem.toDomain(): Event {
         isAllDay = isAllDay,
         subject = subject,
         homework = homework?.toDomain(id),
-        marks = marks.map { it.toDomain(subject) },
+        marks = marks.orEmpty().map { it.toDomain(subject) },
         additionalInformation = description?.let { EventAdditionalInformation(description = it) }
     )
 }

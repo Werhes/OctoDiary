@@ -38,6 +38,27 @@ abstract class MesLikeRepositoryImpl(
         return (Clock.System.now().toEpochMilliseconds() - cachedAtMillis) > cacheLifetimeMillis
     }
 
+    private data class DiaryContext(val personIds: String, val studentId: Long)
+
+    /**
+     * Resolves the identifiers required by the family/mobile API from the account profile.
+     * MES uses different identifiers than the JWT subject:
+     *  - events expect the child's `contingent_guid` (a UUID) as `person_ids`;
+     *  - homeworks expect the child's numeric `id` as `student_id`.
+     * Falls back to the token's own person id when there are no children (e.g. a student account).
+     */
+    private suspend fun getDiaryContext(accessToken: MesToken): Result<DiaryContext> {
+        val profile = mesLikeRemoteDataSource.getProfile(accessToken)
+            .getOrElse { return Result.failure(it) }
+        val child = profile.children.firstOrNull()
+        return Result.success(
+            DiaryContext(
+                personIds = child?.contingentGuid ?: accessToken.personId,
+                studentId = (child?.id ?: profile.profile.id).toLong()
+            )
+        )
+    }
+
     abstract suspend fun getAccessToken(): MesToken?
 
     final override suspend fun getProfile(): Result<UserProfile> {
@@ -95,9 +116,11 @@ abstract class MesLikeRepositoryImpl(
             )
         )
 
+        val context = getDiaryContext(accessToken).getOrElse { return Result.failure(it) }
+
         val remoteResult = mesLikeRemoteDataSource.getEvents(
             accessToken,
-            accessToken.personId,
+            context.personIds,
             dateRange.start.toString(),
             dateRange.endInclusive.toString()
         )
@@ -137,14 +160,11 @@ abstract class MesLikeRepositoryImpl(
                 NotAuthorizedType.ExpiredAccessCredentials
             )
         )
-        val studentId = accessToken.personId.toLongOrNull()
-            ?: return Result.failure(
-                UnknownDiaryException(source = "getHomeworkEntries in MesLikeRepositoryImpl: no student id")
-            )
+        val context = getDiaryContext(accessToken).getOrElse { return Result.failure(it) }
 
         val remoteResult = mesLikeRemoteDataSource.getHomeworks(
             accessToken,
-            studentId,
+            context.studentId,
             dateRange.start.toString(),
             dateRange.endInclusive.toString()
         )
