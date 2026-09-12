@@ -1,6 +1,8 @@
 package org.bxkr.octodiary.data.datasource.remote.impl
 
 import org.bxkr.octodiary.data.datasource.remote.MesLikeRemoteDataSource
+import org.bxkr.octodiary.data.model.api.mes.events.EventsResponse
+import org.bxkr.octodiary.data.model.api.mes.homeworks.HomeworksResponse
 import org.bxkr.octodiary.data.model.api.mes.profile.ProfileResponse
 import org.bxkr.octodiary.data.model.auth.accesscredentials.token.MesToken
 import org.bxkr.octodiary.data.model.auth.accesscredentials.token.UchebnikToken
@@ -21,6 +23,20 @@ abstract class MesLikeRemoteDataSourceImpl(
 
     override suspend fun getProfile(accessToken: MesToken): Result<ProfileResponse> =
         schoolMesApiService.getProfile(accessToken)
+
+    override suspend fun getHomeworks(
+        accessToken: MesToken,
+        studentId: Long,
+        from: String,
+        to: String
+    ): Result<HomeworksResponse> = schoolMesApiService.getHomeworks(accessToken, studentId, from, to)
+
+    override suspend fun getEvents(
+        accessToken: MesToken,
+        personId: String,
+        from: String,
+        to: String
+    ): Result<EventsResponse> = schoolMesApiService.getEvents(accessToken, personId, from, to)
 
     override suspend fun toSchoolToken(uchebnikToken: UchebnikToken): Result<MesToken> =
         uchebnikApiService.toSchoolToken(uchebnikToken.value, uchebnikToken.profileId).map { MesToken(it) }

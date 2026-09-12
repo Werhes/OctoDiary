@@ -28,30 +28,39 @@ class ScheduleViewModel(
     fun loadSchedule() {
         uu { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val capabilities = getCapabilitiesUseCase()
-            val dateRange =
-                if (capabilities.isMultipleDatesEventLoadingJustified) getCurrentWeekDateRange() else getTodayDateRange()
-            val result = getScheduleUseCase(dateRange)
-            result.fold(
-                onSuccess = { events ->
-                    uu {
-                        it.copy(
-                            loadedEvents = events,
-                            loadedEventsDateRange = dateRange
-                        )
-                    }
-                },
-                onFailure = { exception ->
-                    val diaryException = (exception as? DiaryException)
-                        ?: UnknownDiaryException(source = "loadSchedule() in ScheduleViewModel")
-                    if (diaryException is UnknownDiaryException) {
-                        logger.log(LogTemplate.unknownDiaryException(diaryException))
-                    }
-                    uu { it.copy(error = diaryException) }
-                }
-            )
-            uu { it.copy(isLoading = false) }
+            try {
+                val capabilities = getCapabilitiesUseCase()
+                val dateRange =
+                    if (capabilities.isMultipleDatesEventLoadingJustified) getCurrentWeekDateRange() else getTodayDateRange()
+                val result = getScheduleUseCase(dateRange)
+                result.fold(
+                    onSuccess = { events ->
+                        uu {
+                            it.copy(
+                                loadedEvents = events,
+                                loadedEventsDateRange = dateRange
+                            )
+                        }
+                    },
+                    onFailure = { exception -> setDiaryError(exception) }
+                )
+            } catch (throwable: Throwable) {
+                setDiaryError(throwable)
+            } finally {
+                uu { it.copy(isLoading = false) }
+            }
         }
+    }
+
+    private fun setDiaryError(throwable: Throwable) {
+        val diaryException = (throwable as? DiaryException)
+            ?: UnknownDiaryException(
+                source = "loadSchedule() in ScheduleViewModel: ${throwable::class.simpleName}: ${throwable.message}"
+            )
+        if (diaryException is UnknownDiaryException) {
+            logger.log(LogTemplate.unknownDiaryException(diaryException))
+        }
+        uu { it.copy(error = diaryException) }
     }
 
     private fun getTodayDateRange() =

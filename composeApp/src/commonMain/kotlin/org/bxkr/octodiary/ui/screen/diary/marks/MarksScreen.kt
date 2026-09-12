@@ -83,7 +83,7 @@ private fun MarksContent(events: List<Event>) {
     ) {
         bySubject.forEach { (subjectName, subjectMarks) ->
             item(key = subjectName) { SubjectHeader(subjectName, subjectMarks) }
-            items(subjectMarks, key = { it.hashCode() }) { mark ->
+            items(subjectMarks) { mark ->
                 MarkCard(mark)
             }
         }

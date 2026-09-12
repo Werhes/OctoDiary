@@ -7,6 +7,7 @@ import org.bxkr.octodiary.data.mapper.mes.toDomain
 import org.bxkr.octodiary.data.model.auth.accesscredentials.token.MesToken
 import org.bxkr.octodiary.domain.exception.diary.NotAuthorizedException
 import org.bxkr.octodiary.domain.exception.diary.NotAuthorizedType
+import org.bxkr.octodiary.domain.exception.diary.UnknownDiaryException
 import org.bxkr.octodiary.domain.model.event.Event
 import org.bxkr.octodiary.domain.model.group.Group
 import org.bxkr.octodiary.domain.model.homework.HomeworkEntry
@@ -83,13 +84,91 @@ abstract class MesLikeRepositoryImpl(
     }
 
     final override suspend fun getSchedule(dateRange: LocalDateRange): Result<List<Event>> {
-        TODO("Not yet implemented")
+        val accessToken = getAccessToken() ?: return Result.failure(
+            NotAuthorizedException(
+                NotAuthorizedType.AccessCredentialsNotFound
+            )
+        )
+        if (!accessToken.isAlive()) return Result.failure(
+            NotAuthorizedException(
+                NotAuthorizedType.ExpiredAccessCredentials
+            )
+        )
+
+        val remoteResult = mesLikeRemoteDataSource.getEvents(
+            accessToken,
+            accessToken.personId,
+            dateRange.start.toString(),
+            dateRange.endInclusive.toString()
+        )
+
+        return remoteResult.fold(
+            onSuccess = { response ->
+                logger.log(
+                    LogTemplate.successfullyLoaded(
+                        loadedPartName = "schedule", source = "$responsibleFor repository"
+                    )
+                )
+                Result.success(response.toDomain())
+            },
+            onFailure = {
+                logger.log(
+                    ("Couldn't load schedule" +
+                        "| - $responsibleFor repository" +
+                        "| - exception name: ${it::class.simpleName}" +
+                        "| - message: ${it.message}").trimMargin(),
+                    LogLevel.ERROR
+                )
+                Result.failure(it)
+            }
+        )
     }
 
     final override suspend fun getHomeworkEntries(
         dateRange: LocalDateRange
     ): Result<List<HomeworkEntry>> {
-        TODO("Not yet implemented")
+        val accessToken = getAccessToken() ?: return Result.failure(
+            NotAuthorizedException(
+                NotAuthorizedType.AccessCredentialsNotFound
+            )
+        )
+        if (!accessToken.isAlive()) return Result.failure(
+            NotAuthorizedException(
+                NotAuthorizedType.ExpiredAccessCredentials
+            )
+        )
+        val studentId = accessToken.personId.toLongOrNull()
+            ?: return Result.failure(
+                UnknownDiaryException(source = "getHomeworkEntries in MesLikeRepositoryImpl: no student id")
+            )
+
+        val remoteResult = mesLikeRemoteDataSource.getHomeworks(
+            accessToken,
+            studentId,
+            dateRange.start.toString(),
+            dateRange.endInclusive.toString()
+        )
+
+        return remoteResult.fold(
+            onSuccess = { response ->
+                logger.log(
+                    LogTemplate.successfullyLoaded(
+                        loadedPartName = "homeworkEntries", source = "$responsibleFor repository"
+                    )
+                )
+                Result.success(response.toDomain())
+            },
+            onFailure = {
+                logger.log(
+                    ("Couldn't load homeworks" +
+                        "| - $responsibleFor repository" +
+                        "| - exception name: ${it::class.simpleName}" +
+                        "| - message: ${it.message}").trimMargin(),
+                    LogLevel.ERROR
+                )
+                Result.failure(it)
+            }
+        )
     }
 
     final override suspend fun getOrganization(): Result<Organization> {

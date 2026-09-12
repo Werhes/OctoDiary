@@ -90,7 +90,7 @@ private fun HomeworksContent(entries: List<HomeworkEntry>) {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        items(sorted, key = { "${it.subject.id}-${it.deadline}" }) { entry ->
+        items(sorted) { entry ->
             HomeworkCard(entry)
         }
     }
