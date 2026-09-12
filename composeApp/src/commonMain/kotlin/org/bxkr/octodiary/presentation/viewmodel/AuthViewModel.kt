@@ -185,6 +185,24 @@ class AuthViewModel(
         }
     }
 
+    /** Завершает вход по введённому токену (метод AccessToken). */
+    fun continueWithToken(token: String) {
+        val diary = _uiState.value.selectedDiary ?: return
+        viewModelScope.launch {
+            val result = executeAuthStepUseCase(Credentials.AccessToken(token), diary)
+            when (result) {
+                is AuthStepResult.Success -> {
+                    // Успешная авторизация: AuthState-flow обновит состояние и переключит на NavScreen.
+                    resetUiState()
+                }
+                is AuthStepResult.Failure -> {
+                    uu { it.copy(error = getErrorDescription(result)) }
+                }
+                else -> {}
+            }
+        }
+    }
+
     fun openWebViewPage(goToUrl: AuthMethodData.GoToUrl) {
         viewModelScope.launch {
             uu {

@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -84,6 +85,13 @@ fun AuthTokenPrompt(
         )
         AnimatedVisibility(tokenInfoFlow != null) {
             if (tokenInfoFlow != null) TokenInfo(tokenInfoFlow)
+        }
+        Button(
+            onClick = { viewModel.continueWithToken(tokenValue) },
+            enabled = tokenValue.isNotBlank(),
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Text("Продолжить")
         }
     }
 }
