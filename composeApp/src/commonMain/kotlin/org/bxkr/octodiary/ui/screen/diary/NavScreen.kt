@@ -154,7 +154,7 @@ private fun Navigation(
         ) {
             composable(NavDestination.Schedule.route) { ScheduleScreen() }
             composable(NavDestination.Homeworks.route) { HomeworksScreen() }
-            composable(NavDestination.Home.route) { HomeScreen(navViewModel) }
+            composable(NavDestination.Home.route) { HomeScreen() }
             composable(NavDestination.Marks.route) { MarksScreen() }
             composable(NavDestination.Profile.route) { ProfileScreen() }
         }

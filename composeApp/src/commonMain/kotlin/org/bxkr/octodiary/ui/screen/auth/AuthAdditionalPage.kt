@@ -27,6 +27,7 @@ fun AuthAdditionalPage(
                 subtitle = { Text(when (uiState.additionalPageContent) {
                     is AuthViewModel.AdditionalPageContent.TokenPrompt -> "Вход по токену"
                     is AuthViewModel.AdditionalPageContent.WebView -> "Авторизация"
+                    is AuthViewModel.AdditionalPageContent.MesTokenWebView -> "МЭШ — вход по токену"
                     else -> "Дополнительный шаг"
                 }) },
                 navigationIcon = {
@@ -43,6 +44,7 @@ fun AuthAdditionalPage(
             when (val content = uiState.additionalPageContent) {
                 is AuthViewModel.AdditionalPageContent.TokenPrompt -> AuthTokenPrompt()
                 is AuthViewModel.AdditionalPageContent.WebView -> AuthWebView(content)
+                is AuthViewModel.AdditionalPageContent.MesTokenWebView -> MesTokenAuthWebView(content)
                 else -> Text("Экран не найден")
             }
         }

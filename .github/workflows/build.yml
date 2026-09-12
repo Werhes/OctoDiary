@@ -1,0 +1,118 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: >-
+            platforms;android-36
+            build-tools;36.0.0
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Cache Gradle and dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Compile common code (metadata)
+        run: ./gradlew :composeApp:compileKotlinMetadata --console=plain
+
+      - name: Assemble debug APK
+        run: ./gradlew :composeApp:assembleDebug --console=plain
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: octodiary-debug-apk
+          path: composeApp/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  build-ios:
+    name: Build unsigned iOS IPA
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Cache Gradle and Kotlin/Native
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+          key: ${{ runner.os }}-ios-gradle-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-ios-gradle-
+            ${{ runner.os }}-gradle-
+
+      - name: Print Xcode version
+        run: xcodebuild -version
+
+      - name: Build .app (code signing disabled)
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PWD/build/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned .ipa
+        run: |
+          APP_PATH="$PWD/build/dd/Build/Products/Release-iphoneos/octodiary4.app"
+          mkdir -p "$PWD/build/Payload"
+          cp -R "$APP_PATH" "$PWD/build/Payload/"
+          cd "$PWD/build"
+          zip -q -r "OctoDiary-unsigned.ipa" Payload
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: octodiary-ios-unsigned-ipa
+          path: build/OctoDiary-unsigned.ipa
+          if-no-files-found: error

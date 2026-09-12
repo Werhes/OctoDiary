@@ -37,15 +37,11 @@ class MesMosAuthGateway(
         get() = DiaryId.MesMos
 
     private object MosRuConstants {
-        const val MOS_AUTH_GATE_URL = "https://login.mos.ru/sps/oauth/ae"
-        const val SCOPE =
-            "birthday contacts openid profile snils blitz_change_password blitz_user_rights blitz_qr_auth"
-        const val RESPONSE_TYPE = "code"
-        const val PROMPT = "login"
-        const val BIP_ACTION_HINT = "used_sms"
-        const val REDIRECT_URI = "dnevnik-mes://oauth2redirect"
-        const val ACCESS_TYPE = "offline"
-        const val CODE_CHALLENGE_METHOD = "S256"
+        // Единая ссылка: пользователь авторизуется на school.mos.ru, после чего сайт
+        // автоматически переходит (через backUrl) на страницу с токеном.
+        const val SCHOOL_LOGIN_URL =
+            "https://school.mos.ru/?backUrl=https%3A%2F%2Fschool.mos.ru%2Fv2%2Ftoken%2Frefresh%3FroleId%3D1%26subsystem%3D2"
+        const val TOKEN_REFRESH_URL = "https://school.mos.ru/v2/token/refresh?roleId=1&subsystem=2"
     }
 
     private object DeeplinkConstants {
@@ -66,39 +62,6 @@ class MesMosAuthGateway(
             is Credentials.AccessToken -> authorizeByToken(credentials.accessToken)
         }
 
-    private fun getUrl(credentials: IssueCallResponse, codeVerifier: String): String =
-        with(MosRuConstants) {
-            val codeChallenge = encodeToBase64(hash(codeVerifier))
-            val uri = URLBuilder(Url(MOS_AUTH_GATE_URL))
-            uri.parameters.apply {
-                append("scope", SCOPE)
-                append("access_type", ACCESS_TYPE)
-                append("response_type", RESPONSE_TYPE)
-                append("client_id", credentials.clientId)
-                append("redirect_uri", REDIRECT_URI)
-                append("prompt", PROMPT)
-                append("code_challenge", codeChallenge)
-                append("code_challenge_method", CODE_CHALLENGE_METHOD)
-                append("bip_action_hint", BIP_ACTION_HINT)
-            }
-            uri.build().toString()
-        }
-
-    private fun getRandomString(length: Int = 80): String {
-        val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9') + '_' + '-'
-        return (1..length).map { allowedChars.random() }.joinToString("")
-    }
-
-    private fun hash(string: String): ByteArray {
-        val bytes = string.toByteArray().toByteString()
-        return bytes.sha256().toByteArray()
-    }
-
-    @OptIn(ExperimentalEncodingApi::class)
-    private fun encodeToBase64(byteArray: ByteArray): String {
-        return Base64.UrlSafe.encode(byteArray).replace("=", "")
-    }
-
     private suspend fun initializeAuth(authMethod: AuthMethod): AuthStepResult = when (authMethod) {
         is AuthMethod.InBrowser.MosRu -> initializeMosRuAuth(authMethod)
         is AuthMethod.WebView.MosRu -> initializeMosRuAuth(authMethod)
@@ -107,34 +70,17 @@ class MesMosAuthGateway(
         else -> IllegalStateException("UnsupportedAuthMethod").toAuthStepFailure()
     }
 
-    private suspend fun initializeMosRuAuth(method: AuthMethod): AuthStepResult {
-        val isInBrowser = method is AuthMethod.InBrowser.MosRu
-        val credentialsResult = mesMosRemoteDataSource.mosRuIssueCall()
-        val credentials =
-            credentialsResult.getOrNull() ?: return credentialsResult.toAuthStepFailure()
-
-        val codeVerifier = getRandomString()
-
-        kStore.update {
-            it?.copy(
-                authGatewayStorage = AuthGatewayStorage.MesMos(
-                    mosRuInfo = MosRuInfo(
-                        credentials.clientId, credentials.clientSecret, codeVerifier
-                    )
-                ), callbackAuthState = AuthState.Callback.WaitingForCallback(
-                    method, DiaryId.MesMos
-                )
-            )
-        }
-
-        return AuthStepResult.ProceedWithAuthMethod(
+    private suspend fun initializeMosRuAuth(method: AuthMethod): AuthStepResult =
+        // МЭШ: сначала пользователь авторизуется на school.mos.ru, затем приложение
+        // открывает страницу с токеном (token/refresh), откуда пользователь копирует токен
+        // и вставляет его в приложение.
+        AuthStepResult.ProceedWithAuthMethod(
             AuthMethodData.GoToUrl(
-                getUrl(
-                    credentials, codeVerifier
-                ), !isInBrowser
+                url = MosRuConstants.SCHOOL_LOGIN_URL,
+                isWebView = true,
+                tokenUrl = MosRuConstants.TOKEN_REFRESH_URL
             )
         )
-    }
 
     private fun proceedWithTelegramAuth() = AuthStepResult.ProceedWithAuthMethod(
         AuthMethodData.GoToUrl(

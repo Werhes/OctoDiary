@@ -97,6 +97,7 @@
     <string name="goto_lesson">Go to lesson page</string>
     <string name="works">Important works</string>
     <string name="marks">Marks</string>
+    <string name="no_marks">No marks yet</string>
     <string name="placeholder_mark_rating_persons" translatable="false">10 students</string>
     <string name="select_server_hint">Select diary</string>
     <string name="update">Update %s</string>

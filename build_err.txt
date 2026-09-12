@@ -1,0 +1,46 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.4/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: :composeApp:compileDebugKotlinAndroid
+Type-safe project accessors is an incubating feature.
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preDebugBuild UP-TO-DATE
+> Task :composeApp:convertXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidDebug NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidDebug NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidDebug NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:createDebugCompatibleScreenManifests
+> Task :composeApp:generateDebugResValues
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:extractDeepLinksDebug
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:generateDebugResources
+> Task :composeApp:convertXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:copyDebugComposeResourcesToAndroidAssets
+> Task :composeApp:packageDebugResources
+> Task :composeApp:mapDebugSourceSetPaths
+> Task :composeApp:processDebugNavigationResources
+> Task :composeApp:checkDebugAarMetadata
+> Task :composeApp:compileDebugNavigationResources
+> Task :composeApp:processDebugMainManifest
+> Task :composeApp:processDebugManifest
+> Task :composeApp:processDebugManifestForPackage
+> Task :composeApp:parseDebugLocalResources
+> Task :composeApp:mergeDebugResources
+> Task :composeApp:processDebugResources
+> Task :composeApp:kspDebugKotlinAndroid SKIPPED
+> Task :composeApp:compileDebugKotlinAndroid
+w: file:///C:/Users/WerhesDev/Documents/GitHub/OctoDiary/composeApp/src/commonMain/kotlin/org/bxkr/octodiary/presentation/viewmodel/AuthViewModel.kt:118:17 'when' is exhaustive so 'else' is redundant here.
+
+BUILD SUCCESSFUL in 9m 53s
+25 actionable tasks: 25 executed
+Configuration cache entry stored.

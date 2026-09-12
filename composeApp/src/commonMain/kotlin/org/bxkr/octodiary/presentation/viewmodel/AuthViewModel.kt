@@ -136,6 +136,12 @@ class AuthViewModel(
         data object TokenPrompt : AdditionalPageContent()
 
         data class WebView(val url: String, val webViewListener: (String) -> Boolean) : AdditionalPageContent()
+
+        data class MesTokenWebView(
+            val url: String,
+            val tokenUrl: String,
+            val webViewListener: ((String) -> Boolean)? = null
+        ) : AdditionalPageContent()
     }
 
     private fun getErrorDescription(failure: AuthStepResult.Failure): ErrorDescription =
@@ -182,14 +188,29 @@ class AuthViewModel(
     fun openWebViewPage(goToUrl: AuthMethodData.GoToUrl) {
         viewModelScope.launch {
             uu {
-                it.copy(
-                    currentPage = 3,
-                    additionalPageContent = AdditionalPageContent.WebView(
+                val content = if (goToUrl.tokenUrl != null) {
+                    AdditionalPageContent.MesTokenWebView(
+                        goToUrl.url,
+                        goToUrl.tokenUrl,
+                        goToUrl.webViewListener
+                    )
+                } else {
+                    AdditionalPageContent.WebView(
                         goToUrl.url,
                         goToUrl.webViewListener ?: throw IllegalStateException("No web view listener passed")
                     )
-                )
+                }
+                it.copy(currentPage = 3, additionalPageContent = content)
             }
+        }
+    }
+
+    fun goToTokenPrompt() {
+        uu {
+            it.copy(
+                currentPage = 3,
+                additionalPageContent = AdditionalPageContent.TokenPrompt
+            )
         }
     }
 

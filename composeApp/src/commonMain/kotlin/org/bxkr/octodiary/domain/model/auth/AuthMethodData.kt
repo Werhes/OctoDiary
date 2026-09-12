@@ -4,7 +4,8 @@ sealed class AuthMethodData {
     data class GoToUrl(
         val url: String,
         val isWebView: Boolean,
-        val webViewListener: ((String) -> Boolean)? = null
+        val webViewListener: ((String) -> Boolean)? = null,
+        val tokenUrl: String? = null
     ) : AuthMethodData()
 
     data object Proceed : AuthMethodData()
