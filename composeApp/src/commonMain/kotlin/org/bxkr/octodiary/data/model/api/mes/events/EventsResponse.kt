@@ -25,8 +25,7 @@ data class EventItem(
 
 @Serializable
 data class EventHomework(
-    @SerialName("descriptions") val descriptions: List<String> = emptyList(),
-    @SerialName("materials") val materials: Any? = null
+    @SerialName("descriptions") val descriptions: List<String> = emptyList()
 )
 
 @Serializable
